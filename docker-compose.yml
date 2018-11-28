@@ -1,0 +1,21 @@
+version: '3'
+services:
+  api:
+    build: ./api/
+    image: 'strangesast/otis-farted_api'
+    depends_on:
+    - mongo
+    environment:
+      - MONGO_HOST=mongo
+  app:
+    image: 'strangesast/otis-farted_app'
+    ports:
+    - "80:80"
+    depends_on:
+    - api
+    build:
+      context: ./app
+      args:
+        api_host: 'api'
+  mongo:
+    image: mongo
