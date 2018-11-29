@@ -1,14 +1,55 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Subject, of, concat } from 'rxjs';
 import { delay, exhaust, map, shareReplay, startWith, tap } from 'rxjs/operators';
+import { state, trigger, animate, transition, style } from '@angular/animations';
 
 const IMAGE_COUNT = 11;
 
 @Component({
+  animations: [
+    trigger('slideInBlurred', [
+      transition(':enter', [
+        style({
+          'transform': 'translateY(-1000px) scaleY(2.5) scaleX(0.2)',
+          'transform-origin': '50% 0%',
+          'opacity': '0',
+          'filter': 'blur(40px)',
+        }),
+        animate('0.5s cubic-bezier(0.230, 1.000, 0.320, 1.000)', style({
+          'transform': 'translateY(0) scaleY(1) scaleX(1)',
+          'transform-origin': '50% 50%',
+          'opacity': '1',
+          'filter': 'blur(0)',
+        })),
+      ]),
+    ]),
+    trigger('fadeUpIn', [
+      transition(':enter', [
+        style({
+          'transform': 'translateY(100px)',
+          'opacity': '0',
+        }),
+        animate('0.5s cubic-bezier(0.250, 0.460, 0.450, 0.940)', style({
+          'transform': 'translateY(0)',
+          'opacity': '1',
+        })),
+      ]),
+      transition(':leave', [
+        style({
+          'transform': 'translateY(0)',
+          'opacity': '1',
+        }),
+        animate('0.2s cubic-bezier(0.250, 0.460, 0.450, 0.940)', style({
+          'transform': 'translateY(100px)',
+          'opacity': '0',
+        })),
+      ]),
+    ]),
+  ],
   selector: 'app-main',
   template: `
-    <div class="img" (click)="onFart()">
+    <div @slideInBlurred class="img" (click)="onFart()">
       <span></span>
       <picture>
         <source srcset="{{imageSrc}}.webp" type="image/webp">
@@ -16,8 +57,8 @@ const IMAGE_COUNT = 11;
         <img src="{{imageSrc}}.jpg" alt="Otis!">
       </picture>
     </div>
-    <div class="notification" *ngIf="lastFart$ | async as lastFart">
-      <span>Recorded that fart.</span>
+    <div @fadeUpIn class="notification" *ngIf="lastFart$ | async as lastFart">
+      <span>Recorded that fart.  {{randomWord | titlecase}}...</span>
     </div>
   `,
   styles: [
@@ -38,6 +79,7 @@ const IMAGE_COUNT = 11;
       cursor: pointer;
       grid-row: 2 / 3;
       grid-column: 2 / 3;
+      transition: transform 0.1s;
     }
     .img, .img * {
       user-select: none;
@@ -50,8 +92,14 @@ const IMAGE_COUNT = 11;
       height: 100%;
       transition: opacity 0.1s;
     }
+    .img:hover {
+      transform: scale(1.05);
+    }
     .img:hover > span {
       opacity: 0.2;
+    }
+    .img:active {
+      transform: scale(0.95);
     }
     .img:active > span {
       opacity: 0.4;
@@ -74,13 +122,21 @@ export class MainComponent implements OnInit {
   imageNumber = ('0' + Math.ceil(Math.random() * 11)).slice(-2);
   imageSrc = `/images/otis_${this.imageNumber}`;
 
+  words = [
+    'nasty',
+    'gross',
+    'stinky',
+  ];
+
+  randomWord: string;
+
   farts$ = this.http.get(`/api/list`);
 
   fart = new Subject();
 
-  fartDebounce = 2000;
+  fartDebounce = 4000;
 
-  lastFartAudioNumber = 1;
+  lastFartAudioNumber = Math.ceil(Math.random() * 3);
 
   fartAudio;
 
@@ -90,13 +146,20 @@ export class MainComponent implements OnInit {
     startWith(null),
     tap(fart => {
       if (fart != null) {
+        const i = Math.floor(this.words.length * Math.random());
+        this.randomWord = this.words[i];
+        this.cdr.detectChanges();
+
         this.soundFart();
       }
     }),
     shareReplay(1),
   );
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef,
+  ) {}
 
   ngOnInit() {}
 
