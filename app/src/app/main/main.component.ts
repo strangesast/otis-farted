@@ -53,8 +53,8 @@ const IMAGE_COUNT = 11;
       <span></span>
       <picture>
         <source srcset="{{imageSrc}}.webp" type="image/webp">
-        <source srcset="{{imageSrc}}.jpg" type="image/jpeg">
-        <img src="{{imageSrc}}.jpg" alt="Otis!">
+        <source srcset="{{imageSrc}}.png" type="image/png">
+        <img src="{{imageSrc}}.png" alt="Otis!">
       </picture>
     </div>
     <div @fadeUpIn class="notification" *ngIf="lastFart$ | async as lastFart">
